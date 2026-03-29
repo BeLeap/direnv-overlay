@@ -77,17 +77,24 @@ Expected behavior:
 `direnv` loads custom helpers from `~/.config/direnv/lib/*.sh` (or the matching
 `$XDG_CONFIG_HOME` path). This repository provides one helper script there.
 
-From the repository root:
+From a cloned repository root:
 
 ```sh
 bin/install
 ```
 
-That creates a symlink at:
+This creates a symlink at `~/.config/direnv/lib/direnv-overlay.sh` that points to
+`lib/direnv-overlay.sh` in the clone.
 
-```text
-~/.config/direnv/lib/direnv-overlay.sh
+If you prefer a one-liner installer (no git clone), run the install script via
+`curl | sh`:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/<owner>/<repo>/main/bin/install | sh
 ```
+
+In `curl | sh` mode, the installer writes a standalone copy to
+`~/.config/direnv/lib/direnv-overlay.sh`.
 
 ## Usage
 
