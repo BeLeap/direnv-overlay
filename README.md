@@ -21,53 +21,54 @@ This project aims to make `direnv` load per-user overlays from outside the repos
 
 The intended workflow is:
 
-1. A project commits a minimal `.envrc` that can reference an overlay, for example
-   `overlay foo`.
-2. `direnv-overlay` resolves `foo` to a user-owned directory such as
-   `~/.direnv-overlay/foo/`.
-3. The overlay's own `.envrc` is loaded and can choose whatever tools it wants to use.
+1. A user installs a global `direnv` helper.
+2. Their personal `direnvrc` calls `use_global_overlay`.
+3. `direnv-overlay` matches the current project against a user-owned mapping file.
+4. The selected overlay is resolved to a user-owned directory such as
+   `~/.direnv-overlay/work-api/`.
+5. That overlay's own `.envrc` is loaded and can choose whatever tools it wants to use.
 
-This lets a repository define a stable hook point without committing one developer's
-private environment choices. The exact directive does not need to reuse `direnv`'s
-built-in `use` naming; a dedicated helper such as `overlay <name>` may be clearer.
+This keeps overlay existence and overlay selection entirely out of upstream
+repositories. Repositories do not need to declare an `overlay` hook at all.
 
 ## Desired Properties
 
 - Personal overlays live outside the project working tree.
 - Missing overlays should fail clearly, not silently.
 - Shared project config and personal config stay separate.
-- The mechanism should be as simple to invoke as built-in `direnv` helpers.
-- The interface should prefer a clear, project-specific directive over overloaded naming.
-
-## Interface Direction
-
-The initial idea was to support `use foo`, modeled after `use nix`. A clearer direction
-is probably to introduce a dedicated directive such as:
-
-```sh
-overlay foo
-```
-
-That avoids overloading the meaning of `use` and makes it obvious that the command is
-loading a personal overlay from outside the repository.
+- The mechanism should integrate with normal `direnv` global configuration.
+- The interface should keep overlay selection in user-owned config, not project files.
 
 ## Example
 
-Project `.envrc`:
+Global `direnvrc`:
 
 ```sh
-overlay foo
+use_global_overlay
 ```
 
-Personal files:
+Personal mapping file:
 
 ```text
-~/.direnv-overlay/foo/.envrc
+~/.config/direnv/overlay-map
 ```
 
-Expected behavior:
+```text
+path:/Users/alice/src/work/api => work-api
+repo:direnv-overlay => personal-dev
+```
 
-- `overlay foo` looks up `~/.direnv-overlay/foo/`
+Personal overlay:
+
+```text
+~/.direnv-overlay/work-api/.envrc
+```
+
+Expected behavior when `direnv` evaluates inside `/Users/alice/src/work/api`:
+
+- `use_global_overlay` reads `~/.config/direnv/overlay-map`
+- `path:/Users/alice/src/work/api` matches first
+- `work-api` resolves to `~/.direnv-overlay/work-api/`
 - the overlay's `.envrc` is loaded
 - the overlay can then decide for itself whether to use `nix`, `mise`, or something else
 - nothing personal needs to be committed to the upstream repository
@@ -96,6 +97,13 @@ curl -fsSL https://raw.githubusercontent.com/BeLeap/direnv-overlay/refs/heads/ma
 In `curl | sh` mode, the installer writes a standalone copy to
 `~/.config/direnv/lib/direnv-overlay.sh`.
 
+After installation, enable the matcher from your personal `direnvrc`:
+
+```sh
+mkdir -p "${XDG_CONFIG_HOME:-$HOME/.config}/direnv"
+printf '%s\n' 'use_global_overlay' >> "${XDG_CONFIG_HOME:-$HOME/.config}/direnv/direnvrc"
+```
+
 To uninstall, remove the helper script:
 
 ```sh
@@ -110,23 +118,43 @@ curl -fsSL https://raw.githubusercontent.com/BeLeap/direnv-overlay/refs/heads/ma
 
 ## Usage
 
-In a project `.envrc`:
+In your personal `direnvrc`:
 
 ```sh
-overlay foo
+use_global_overlay
 ```
 
-`overlay foo` resolves to `~/.direnv-overlay/foo/` by default. It supports this entry
-point:
+`use_global_overlay` resolves the current project to an overlay name using
+`$XDG_CONFIG_HOME/direnv/overlay-map` by default. You can override the file path with
+`DIRENV_OVERLAY_MAP_FILE`.
+
+Supported mapping entries:
+
+- `path:/absolute/project/root => overlay-name`
+- `repo:directory-name => overlay-name`
+
+Lookup behavior:
+
+- `path:` matches the detected project root exactly and has priority
+- `repo:` matches the final path segment of the detected project root
+- if there is no mapping, `use_global_overlay` does nothing
+- invalid mapping lines fail explicitly
+
+The detected overlay then resolves to `~/.direnv-overlay/<name>/` by default. It
+supports this entry point:
 
 1. `~/.direnv-overlay/foo/.envrc`
 
 Behavior:
 
+- the mapping file is watched so `direnv` reloads when it changes
 - `.envrc` is sourced from inside the overlay directory, so relative paths resolve there
 - the overlay directory is watched for changes so `direnv` reloads when files change
 - missing overlays or a missing overlay `.envrc` fail with explicit errors
 - tool-specific setup stays inside the overlay `.envrc`
+
+Project root detection looks upward from `$PWD` for the nearest `.envrc`, `.git`, or
+`.jj` directory.
 
 Example overlay file:
 
@@ -147,7 +175,7 @@ You can override the root path with `DIRENV_OVERLAY_ROOT`.
 
 ```sh
 export DIRENV_OVERLAY_ROOT="$HOME/.config/direnv/overlays"
-overlay foo
+use_global_overlay
 ```
 
 Inside overlay scripts, these variables are available:
@@ -155,12 +183,30 @@ Inside overlay scripts, these variables are available:
 - `DIRENV_OVERLAY_NAME`
 - `DIRENV_OVERLAY_DIR`
 
+## Limitations
+
+`direnv` still needs to evaluate a directory somehow before global helpers run. In
+practice that means the project must already participate in `direnv` evaluation, such as
+having a `.envrc`. If a project has no `.envrc` at all, the global matcher has no entry
+point and you will need a local, uncommitted `.envrc` to activate `direnv` there.
+
+## Low-Level Helper
+
+The explicit helper remains available:
+
+```sh
+overlay foo
+```
+
+That loads `~/.direnv-overlay/foo/.envrc` directly. It is useful for manual or legacy
+setups, but the preferred interface is `use_global_overlay`.
+
 ## Scope For Initial Implementation
 
 The first useful version only needs to answer a small set of questions well:
 
-- How does `overlay <name>` map to an overlay directory?
+- How does the current project map to an overlay name?
+- How does an overlay name map to an overlay directory?
 - Which files are supported inside an overlay?
-- In what order are those files evaluated?
-- What error message is shown when an overlay does not exist?
-- How should the custom overlay directive integrate with normal `direnv` stdlib patterns?
+- What error message is shown when a mapping or overlay is invalid?
+- How should the global matcher integrate with normal `direnv` stdlib patterns?
