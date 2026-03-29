@@ -28,6 +28,125 @@ _direnv_overlay_error() {
   return 1
 }
 
+_direnv_overlay_trim() {
+  local value="$1"
+
+  value="${value#"${value%%[![:space:]]*}"}"
+  value="${value%"${value##*[![:space:]]}"}"
+
+  printf '%s' "$value"
+}
+
+_direnv_overlay_config_home() {
+  printf '%s\n' "${XDG_CONFIG_HOME:-$HOME/.config}"
+}
+
+_direnv_overlay_map_file() {
+  local config_home
+
+  config_home="$(_direnv_overlay_config_home)"
+  printf '%s\n' "${DIRENV_OVERLAY_MAP_FILE:-$config_home/direnv/overlay-map}"
+}
+
+_direnv_overlay_project_root() {
+  local dir="$PWD"
+
+  while [ -n "$dir" ]; do
+    if [ -f "$dir/.envrc" ] || [ -d "$dir/.git" ] || [ -d "$dir/.jj" ]; then
+      printf '%s\n' "$dir"
+      return 0
+    fi
+
+    if [ "$dir" = "/" ]; then
+      break
+    fi
+
+    dir=${dir%/*}
+
+    if [ -z "$dir" ]; then
+      dir="/"
+    fi
+  done
+
+  return 1
+}
+
+_direnv_overlay_lookup_name() {
+  local map_file
+  local project_root
+  local repo_name
+  local line=""
+  local matcher=""
+  local overlay_name=""
+  local path_match=""
+  local repo_match=""
+
+  DIRENV_OVERLAY_MATCH=""
+  map_file="$(_direnv_overlay_map_file)"
+
+  if [ ! -f "$map_file" ]; then
+    return 2
+  fi
+
+  project_root="$(_direnv_overlay_project_root)" || return 2
+  repo_name=${project_root##*/}
+
+  watch_file "$map_file"
+
+  while IFS= read -r line || [ -n "$line" ]; do
+    line="$(_direnv_overlay_trim "$line")"
+
+    case "$line" in
+      ""|\#*)
+        continue
+        ;;
+      *"=>"*)
+        matcher="$(_direnv_overlay_trim "${line%%=>*}")"
+        overlay_name="$(_direnv_overlay_trim "${line#*=>}")"
+        ;;
+      *)
+        _direnv_overlay_error "invalid mapping entry: $line"
+        return 1
+        ;;
+    esac
+
+    if [ -z "$overlay_name" ]; then
+      _direnv_overlay_error "mapping entry has empty overlay name: $line"
+      return 1
+    fi
+
+    case "$matcher" in
+      path:*)
+        if [ "${matcher#path:}" = "$project_root" ]; then
+          path_match="$overlay_name"
+          break
+        fi
+        ;;
+      repo:*)
+        if [ -z "$repo_match" ] && [ "${matcher#repo:}" = "$repo_name" ]; then
+          repo_match="$overlay_name"
+        fi
+        ;;
+      *)
+        _direnv_overlay_error "invalid mapping key: $matcher"
+        return 1
+        ;;
+    esac
+  done < "$map_file"
+
+  if [ -n "$path_match" ]; then
+    DIRENV_OVERLAY_MATCH="$path_match"
+    return 0
+  fi
+
+  if [ -n "$repo_match" ]; then
+    DIRENV_OVERLAY_MATCH="$repo_match"
+    return 0
+  fi
+
+  return 2
+}
+
 _direnv_overlay_with_context() {
   local overlay_name="$1"
   local overlay_dir="$2"
@@ -117,6 +236,29 @@ overlay() {
   _direnv_overlay_error "overlay $name is missing .envrc: $overlay_envrc"
   return 1
 }
+
+use_global_overlay() {
+  local status=0
+
+  if [ "$#" -ne 0 ]; then
+    _direnv_overlay_error "usage: use_global_overlay"
+    return 1
+  fi
+
+  _direnv_overlay_lookup_name || status=$?
+
+  case "$status" in
+    0)
+      overlay "$DIRENV_OVERLAY_MATCH"
+      ;;
+    2)
+      return 0
+      ;;
+    *)
+      return "$status"
+      ;;
+  esac
+}
 SCRIPT
   chmod 0644 "$target_file"
   printf 'installed %s from embedded installer payload\n' "$target_file"
@@ -127,3 +269,5 @@ if [ -n "$source_file" ]; then
 else
   install_embedded_copy
 fi
+
+printf 'add `use_global_overlay` to %s/direnv/direnvrc to enable global matching\n' "$config_home"
