@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+set -eu
+
+script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+repo_root=$(CDPATH= cd -- "$script_dir/.." && pwd)
+config_home=${XDG_CONFIG_HOME:-"$HOME/.config"}
+target_dir="$config_home/direnv/lib"
+source_file="$repo_root/lib/direnv-overlay.sh"
+target_file="$target_dir/direnv-overlay.sh"
+
+mkdir -p "$target_dir"
+ln -sfn "$source_file" "$target_file"
+
+printf 'installed %s -> %s\n' "$target_file" "$source_file"

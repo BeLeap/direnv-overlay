@@ -25,8 +25,7 @@ The intended workflow is:
    `overlay foo`.
 2. `direnv-overlay` resolves `foo` to a user-owned directory such as
    `~/.direnv-overlay/foo/`.
-3. Files in that overlay directory, such as `.envrc`, `shell.nix`, or related helper
-   files, are loaded and applied for that user only.
+3. The overlay's own `.envrc` is loaded and can choose whatever tools it wants to use.
 
 This lets a repository define a stable hook point without committing one developer's
 private environment choices. The exact directive does not need to reuse `direnv`'s
@@ -64,15 +63,78 @@ Personal files:
 
 ```text
 ~/.direnv-overlay/foo/.envrc
-~/.direnv-overlay/foo/shell.nix
 ```
 
 Expected behavior:
 
 - `overlay foo` looks up `~/.direnv-overlay/foo/`
 - the overlay's `.envrc` is loaded
-- if needed, the overlay can reference its own `shell.nix` or related files
+- the overlay can then decide for itself whether to use `nix`, `mise`, or something else
 - nothing personal needs to be committed to the upstream repository
+
+## Installation
+
+`direnv` loads custom helpers from `~/.config/direnv/lib/*.sh` (or the matching
+`$XDG_CONFIG_HOME` path). This repository provides one helper script there.
+
+From the repository root:
+
+```sh
+bin/install
+```
+
+That creates a symlink at:
+
+```text
+~/.config/direnv/lib/direnv-overlay.sh
+```
+
+## Usage
+
+In a project `.envrc`:
+
+```sh
+overlay foo
+```
+
+`overlay foo` resolves to `~/.direnv-overlay/foo/` by default. It supports this entry
+point:
+
+1. `~/.direnv-overlay/foo/.envrc`
+
+Behavior:
+
+- `.envrc` is sourced from inside the overlay directory, so relative paths resolve there
+- the overlay directory is watched for changes so `direnv` reloads when files change
+- missing overlays or a missing overlay `.envrc` fail with explicit errors
+- tool-specific setup stays inside the overlay `.envrc`
+
+Example overlay file:
+
+```sh
+use nix
+layout python
+PATH_add bin
+```
+
+Another overlay could use a different tool entirely:
+
+```sh
+PATH_add bin
+eval "$(mise activate bash)"
+```
+
+You can override the root path with `DIRENV_OVERLAY_ROOT`.
+
+```sh
+export DIRENV_OVERLAY_ROOT="$HOME/.config/direnv/overlays"
+overlay foo
+```
+
+Inside overlay scripts, these variables are available:
+
+- `DIRENV_OVERLAY_NAME`
+- `DIRENV_OVERLAY_DIR`
 
 ## Scope For Initial Implementation
 
