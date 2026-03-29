@@ -22,7 +22,7 @@ This project aims to make `direnv` load per-user overlays from outside the repos
 The intended workflow is:
 
 1. A user installs a global `direnv` helper.
-2. Their personal `direnvrc` calls `use_global_overlay`.
+2. Their personal `direnvrc` calls `use_direnv_overlay`.
 3. `direnv-overlay` matches the current project against a user-owned mapping file.
 4. The selected overlay is resolved to a user-owned directory such as
    `~/.direnv-overlay/work-api/`.
@@ -44,7 +44,7 @@ repositories. Repositories do not need to declare an `overlay` hook at all.
 Global `direnvrc`:
 
 ```sh
-use_global_overlay
+use_direnv_overlay
 ```
 
 Personal mapping file:
@@ -66,7 +66,7 @@ Personal overlay:
 
 Expected behavior when `direnv` evaluates inside `/Users/alice/src/work/api`:
 
-- `use_global_overlay` reads `~/.direnv-overlay/overlays.map`
+- `use_direnv_overlay` reads `~/.direnv-overlay/overlays.map`
 - `path:/Users/alice/src/work/api` matches first
 - `work-api` resolves to `~/.direnv-overlay/work-api/`
 - the overlay's `.envrc` is loaded
@@ -76,55 +76,46 @@ Expected behavior when `direnv` evaluates inside `/Users/alice/src/work/api`:
 ## Installation
 
 `direnv` loads custom helpers from `~/.config/direnv/lib/*.sh` (or the matching
-`$XDG_CONFIG_HOME` path). This repository provides one helper script there.
+`$XDG_CONFIG_HOME` path). This project installs a standalone helper file there.
 
-From a cloned repository root:
-
-```sh
-bin/install
-```
-
-This creates a symlink at `~/.config/direnv/lib/direnv-overlay.sh` that points to
-`lib/direnv-overlay.sh` in the clone.
-
-If you prefer a one-liner installer (no git clone), run the install script via
-`curl | sh`:
+Recommended:
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/BeLeap/direnv-overlay/refs/heads/master/bin/install | sh
 ```
 
-In `curl | sh` mode, the installer writes a standalone copy to
-`~/.config/direnv/lib/direnv-overlay.sh`.
+This writes `~/.config/direnv/lib/direnv-overlay.sh`.
+
+If you have a local checkout, running the installer there produces the same result:
+
+```sh
+bin/install
+```
 
 After installation, enable the matcher from your personal `direnvrc`:
 
 ```sh
 mkdir -p "${XDG_CONFIG_HOME:-$HOME/.config}/direnv"
-printf '%s\n' 'use_global_overlay' >> "${XDG_CONFIG_HOME:-$HOME/.config}/direnv/direnvrc"
+printf '%s\n' 'use_direnv_overlay' >> "${XDG_CONFIG_HOME:-$HOME/.config}/direnv/direnvrc"
 ```
 
-To uninstall, remove the helper script:
-
-```sh
-bin/uninstall
-```
-
-You can also uninstall with `curl | sh`:
+To uninstall:
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/BeLeap/direnv-overlay/refs/heads/master/bin/uninstall | sh
 ```
+
+If you have a local checkout, `bin/uninstall` removes the same file.
 
 ## Usage
 
 In your personal `direnvrc`:
 
 ```sh
-use_global_overlay
+use_direnv_overlay
 ```
 
-`use_global_overlay` resolves the current project to an overlay name using
+`use_direnv_overlay` resolves the current project to an overlay name using
 `~/.direnv-overlay/overlays.map` by default. You can override the file path with
 `DIRENV_OVERLAY_MAP_FILE`.
 
@@ -137,7 +128,7 @@ Lookup behavior:
 
 - `path:` matches the detected project root exactly and has priority
 - `repo:` matches the final path segment of the detected project root
-- if there is no mapping, `use_global_overlay` does nothing
+- if there is no mapping, `use_direnv_overlay` does nothing
 - invalid mapping lines fail explicitly
 
 The detected overlay then resolves to `~/.direnv-overlay/<name>/` by default. It
@@ -175,7 +166,7 @@ You can override the root path with `DIRENV_OVERLAY_ROOT`.
 
 ```sh
 export DIRENV_OVERLAY_ROOT="$HOME/.config/direnv/overlays"
-use_global_overlay
+use_direnv_overlay
 ```
 
 When `DIRENV_OVERLAY_ROOT` is set, the default mapping path moves with it to
@@ -190,7 +181,7 @@ Inside overlay scripts, these variables are available:
 
 `direnv` still needs to evaluate a directory somehow before global helpers run. In
 practice that means the project must already participate in `direnv` evaluation, such as
-having a `.envrc`. If a project has no `.envrc` at all, the global matcher has no entry
+having a `.envrc`. If a project has no `.envrc` at all, the overlay matcher has no entry
 point and you will need a local, uncommitted `.envrc` to activate `direnv` there.
 
 ## Low-Level Helper
@@ -202,7 +193,7 @@ overlay foo
 ```
 
 That loads `~/.direnv-overlay/foo/.envrc` directly. It is useful for manual or legacy
-setups, but the preferred interface is `use_global_overlay`.
+setups, but the preferred interface is `use_direnv_overlay`.
 
 ## Scope For Initial Implementation
 
@@ -212,4 +203,4 @@ The first useful version only needs to answer a small set of questions well:
 - How does an overlay name map to an overlay directory?
 - Which files are supported inside an overlay?
 - What error message is shown when a mapping or overlay is invalid?
-- How should the global matcher integrate with normal `direnv` stdlib patterns?
+- How should the overlay matcher integrate with normal `direnv` stdlib patterns?

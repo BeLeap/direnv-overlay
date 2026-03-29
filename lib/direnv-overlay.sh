@@ -212,11 +212,11 @@ overlay() {
   return 1
 }
 
-use_global_overlay() {
+use_direnv_overlay() {
   local status=0
 
   if [ "$#" -ne 0 ]; then
-    _direnv_overlay_error "usage: use_global_overlay"
+    _direnv_overlay_error "usage: use_direnv_overlay"
     return 1
   fi
 
