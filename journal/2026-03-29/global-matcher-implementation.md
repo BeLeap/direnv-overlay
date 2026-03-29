@@ -3,7 +3,7 @@ Implemented the global project matcher model for `direnv-overlay`.
 What changed:
 
 - Added `use_global_overlay` as the preferred entrypoint for personal `direnvrc`.
-- Added mapping lookup from `$XDG_CONFIG_HOME/direnv/overlay-map` or `DIRENV_OVERLAY_MAP_FILE`.
+- Added mapping lookup from `~/.direnv-overlay/overlays.map` or `DIRENV_OVERLAY_MAP_FILE`.
 - Supported two mapping keys:
   - `path:/absolute/project/root => overlay-name`
   - `repo:directory-name => overlay-name`

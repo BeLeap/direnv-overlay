@@ -42,10 +42,8 @@ _direnv_overlay_config_home() {
 }
 
 _direnv_overlay_map_file() {
-  local config_home
-
-  config_home="$(_direnv_overlay_config_home)"
-  printf '%s\n' "${DIRENV_OVERLAY_MAP_FILE:-$config_home/direnv/overlay-map}"
+  local root="${DIRENV_OVERLAY_ROOT:-$HOME/.direnv-overlay}"
+  printf '%s\n' "${DIRENV_OVERLAY_MAP_FILE:-${root%/}/overlays.map}"
 }
 
 _direnv_overlay_project_root() {

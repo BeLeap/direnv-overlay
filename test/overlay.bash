@@ -148,12 +148,10 @@ test_use_global_overlay_loads_repo_match() {
   local project_dir="$tmpdir/project-repo-match"
   local home_dir="$tmpdir/home-repo-match"
   local overlay_dir="$home_dir/.direnv-overlay/foo"
-  local config_home="$home_dir/.config"
-  local map_file="$config_home/direnv/overlay-map"
+  local map_file="$home_dir/.direnv-overlay/overlays.map"
 
   mkdir -p "$project_dir" "$overlay_dir" "$(dirname "$map_file")"
   HOME="$home_dir"
-  XDG_CONFIG_HOME="$config_home"
   LAST_WATCH_DIR=""
   LAST_WATCH_FILE=""
   LAST_ERROR=""
@@ -180,12 +178,10 @@ test_use_global_overlay_prefers_path_match() {
   local home_dir="$tmpdir/home-path-match"
   local default_overlay_dir="$home_dir/.direnv-overlay/default"
   local specific_overlay_dir="$home_dir/.direnv-overlay/specific"
-  local config_home="$home_dir/.config"
-  local map_file="$config_home/direnv/overlay-map"
+  local map_file="$home_dir/.direnv-overlay/overlays.map"
 
   mkdir -p "$project_dir" "$default_overlay_dir" "$specific_overlay_dir" "$(dirname "$map_file")"
   HOME="$home_dir"
-  XDG_CONFIG_HOME="$config_home"
   LAST_ERROR=""
   unset OVERLAY_RESULT
 
@@ -210,12 +206,10 @@ EOF
 test_use_global_overlay_errors_on_invalid_mapping() {
   local project_dir="$tmpdir/project-invalid-map"
   local home_dir="$tmpdir/home-invalid-map"
-  local config_home="$home_dir/.config"
-  local map_file="$config_home/direnv/overlay-map"
+  local map_file="$home_dir/.direnv-overlay/overlays.map"
 
   mkdir -p "$project_dir" "$(dirname "$map_file")"
   HOME="$home_dir"
-  XDG_CONFIG_HOME="$config_home"
   LAST_ERROR=""
 
   : >"$project_dir/.envrc"
