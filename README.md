@@ -76,26 +76,21 @@ Expected behavior when `direnv` evaluates inside `/Users/alice/src/work/api`:
 ## Installation
 
 `direnv` loads custom helpers from `~/.config/direnv/lib/*.sh` (or the matching
-`$XDG_CONFIG_HOME` path). This repository provides one helper script there.
+`$XDG_CONFIG_HOME` path). This project installs a standalone helper file there.
 
-From a cloned repository root:
-
-```sh
-bin/install
-```
-
-This creates a symlink at `~/.config/direnv/lib/direnv-overlay.sh` that points to
-`lib/direnv-overlay.sh` in the clone.
-
-If you prefer a one-liner installer (no git clone), run the install script via
-`curl | sh`:
+Recommended:
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/BeLeap/direnv-overlay/refs/heads/master/bin/install | sh
 ```
 
-In `curl | sh` mode, the installer writes a standalone copy to
-`~/.config/direnv/lib/direnv-overlay.sh`.
+This writes `~/.config/direnv/lib/direnv-overlay.sh`.
+
+If you have a local checkout, running the installer there produces the same result:
+
+```sh
+bin/install
+```
 
 After installation, enable the matcher from your personal `direnvrc`:
 
@@ -104,17 +99,13 @@ mkdir -p "${XDG_CONFIG_HOME:-$HOME/.config}/direnv"
 printf '%s\n' 'use_global_overlay' >> "${XDG_CONFIG_HOME:-$HOME/.config}/direnv/direnvrc"
 ```
 
-To uninstall, remove the helper script:
-
-```sh
-bin/uninstall
-```
-
-You can also uninstall with `curl | sh`:
+To uninstall:
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/BeLeap/direnv-overlay/refs/heads/master/bin/uninstall | sh
 ```
+
+If you have a local checkout, `bin/uninstall` removes the same file.
 
 ## Usage
 
