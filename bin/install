@@ -231,11 +231,11 @@ overlay() {
   return 1
 }
 
-use_global_overlay() {
+use_direnv_overlay() {
   local status=0
 
   if [ "$#" -ne 0 ]; then
-    _direnv_overlay_error "usage: use_global_overlay"
+    _direnv_overlay_error "usage: use_direnv_overlay"
     return 1
   fi
 
@@ -258,4 +258,4 @@ SCRIPT
 }
 
 install_embedded_copy
-printf 'add `use_global_overlay` to %s/direnv/direnvrc to enable global matching\n' "$config_home"
+printf 'add `use_direnv_overlay` to %s/direnv/direnvrc to enable overlay matching\n' "$config_home"
