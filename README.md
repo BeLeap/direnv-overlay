@@ -90,7 +90,7 @@ If you prefer a one-liner installer (no git clone), run the install script via
 `curl | sh`:
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/<owner>/<repo>/main/bin/install | sh
+curl -fsSL https://raw.githubusercontent.com/BeLeap/direnv-overlay/main/bin/install | sh
 ```
 
 In `curl | sh` mode, the installer writes a standalone copy to
