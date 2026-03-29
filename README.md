@@ -68,6 +68,42 @@ locally instead:
 ./bin/uninstall
 ```
 
+## Home Manager
+
+If you use Nix with Home Manager, this repository also exposes a reusable module.
+
+From a flake input:
+
+```nix
+{
+  inputs.direnv-overlay.url = "github:BeLeap/direnv-overlay";
+
+  outputs = { nixpkgs, home-manager, direnv-overlay, ... }: {
+    homeConfigurations.alice = home-manager.lib.homeManagerConfiguration {
+      pkgs = import nixpkgs { system = "x86_64-linux"; };
+      modules = [
+        direnv-overlay.homeManagerModules.default
+        {
+          programs.direnv.enable = true;
+          programs.direnv-overlay = {
+            enable = true;
+            overlayRoot = "\${config.home.homeDirectory}/.direnv-overlay";
+          };
+        }
+      ];
+    };
+  };
+}
+```
+
+This module:
+
+- installs the helper into `~/.config/direnv/lib/direnv-overlay.sh`
+- appends `use_direnv_overlay` to Home Manager's `programs.direnv.stdlib`
+- optionally exports `DIRENV_OVERLAY_ROOT` and `DIRENV_OVERLAY_MAP_FILE`
+
+The flake also exposes a package at `packages.<system>.default`.
+
 ## Overlay Setup
 
 The default mapping file is:
