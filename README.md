@@ -50,7 +50,7 @@ use_global_overlay
 Personal mapping file:
 
 ```text
-~/.config/direnv/overlay-map
+~/.direnv-overlay/overlays.map
 ```
 
 ```text
@@ -66,7 +66,7 @@ Personal overlay:
 
 Expected behavior when `direnv` evaluates inside `/Users/alice/src/work/api`:
 
-- `use_global_overlay` reads `~/.config/direnv/overlay-map`
+- `use_global_overlay` reads `~/.direnv-overlay/overlays.map`
 - `path:/Users/alice/src/work/api` matches first
 - `work-api` resolves to `~/.direnv-overlay/work-api/`
 - the overlay's `.envrc` is loaded
@@ -125,7 +125,7 @@ use_global_overlay
 ```
 
 `use_global_overlay` resolves the current project to an overlay name using
-`$XDG_CONFIG_HOME/direnv/overlay-map` by default. You can override the file path with
+`~/.direnv-overlay/overlays.map` by default. You can override the file path with
 `DIRENV_OVERLAY_MAP_FILE`.
 
 Supported mapping entries:
@@ -177,6 +177,9 @@ You can override the root path with `DIRENV_OVERLAY_ROOT`.
 export DIRENV_OVERLAY_ROOT="$HOME/.config/direnv/overlays"
 use_global_overlay
 ```
+
+When `DIRENV_OVERLAY_ROOT` is set, the default mapping path moves with it to
+`$DIRENV_OVERLAY_ROOT/overlays.map`.
 
 Inside overlay scripts, these variables are available:
 
