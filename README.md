@@ -96,6 +96,18 @@ curl -fsSL https://raw.githubusercontent.com/BeLeap/direnv-overlay/refs/heads/ma
 In `curl | sh` mode, the installer writes a standalone copy to
 `~/.config/direnv/lib/direnv-overlay.sh`.
 
+To uninstall, remove the helper script:
+
+```sh
+bin/uninstall
+```
+
+You can also uninstall with `curl | sh`:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/BeLeap/direnv-overlay/refs/heads/master/bin/uninstall | sh
+```
+
 ## Usage
 
 In a project `.envrc`:

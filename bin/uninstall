@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+config_home=${XDG_CONFIG_HOME:-"$HOME/.config"}
+target_file="$config_home/direnv/lib/direnv-overlay.sh"
+
+if [ -L "$target_file" ] || [ -f "$target_file" ]; then
+  rm -f -- "$target_file"
+  printf 'removed %s\n' "$target_file"
+  exit 0
+fi
+
+printf 'nothing to remove: %s\n' "$target_file" >&2
+exit 1
