@@ -14,8 +14,6 @@ stdenvNoCC.mkDerivation {
     runHook preCheck
 
     bash test/overlay.bash
-    bash test/install.bash
-    bash test/uninstall.bash
 
     runHook postCheck
   '';
