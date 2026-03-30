@@ -95,6 +95,8 @@ EOF
   assert_eq "$project_dir" "$PWD"
   assert_eq "$overlay_dir" "$LAST_WATCH_DIR"
   assert_eq "$overlay_dir|foo|$overlay_dir" "$OVERLAY_RESULT"
+  assert_eq "foo" "$DIRENV_OVERLAY_NAME"
+  assert_eq "$overlay_dir" "$DIRENV_OVERLAY_DIR"
 }
 
 test_errors_when_overlay_has_no_entrypoint() {
@@ -171,6 +173,8 @@ EOF
   assert_eq "$map_file" "$LAST_WATCH_FILE"
   assert_eq "$overlay_dir" "$LAST_WATCH_DIR"
   assert_eq "$overlay_dir|foo|$overlay_dir" "$OVERLAY_RESULT"
+  assert_eq "foo" "$DIRENV_OVERLAY_NAME"
+  assert_eq "$overlay_dir" "$DIRENV_OVERLAY_DIR"
 }
 
 test_use_direnv_overlay_prefers_path_match() {
