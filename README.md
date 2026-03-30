@@ -205,7 +205,7 @@ When an overlay is loaded:
 - the overlay directory is watched for changes
 - the overlay `.envrc` is sourced from inside the overlay directory
 - relative paths inside the overlay resolve from that overlay directory
-- `DIRENV_OVERLAY_NAME` and `DIRENV_OVERLAY_DIR` are exported while the overlay runs
+- `DIRENV_OVERLAY_NAME` and `DIRENV_OVERLAY_DIR` are exported to indicate the active overlay
 
 ## Project Detection
 

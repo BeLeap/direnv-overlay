@@ -122,47 +122,6 @@ _direnv_overlay_lookup_name() {
   return 2
 }
 
-_direnv_overlay_with_context() {
-  local overlay_name="$1"
-  local overlay_dir="$2"
-  shift 2
-
-  local had_name=0
-  local had_dir=0
-  local previous_name=""
-  local previous_dir=""
-  local status=0
-
-  if [ "${DIRENV_OVERLAY_NAME+x}" = "x" ]; then
-    had_name=1
-    previous_name="$DIRENV_OVERLAY_NAME"
-  fi
-
-  if [ "${DIRENV_OVERLAY_DIR+x}" = "x" ]; then
-    had_dir=1
-    previous_dir="$DIRENV_OVERLAY_DIR"
-  fi
-
-  export DIRENV_OVERLAY_NAME="$overlay_name"
-  export DIRENV_OVERLAY_DIR="$overlay_dir"
-
-  "$@" || status=$?
-
-  if [ "$had_name" -eq 1 ]; then
-    export DIRENV_OVERLAY_NAME="$previous_name"
-  else
-    unset DIRENV_OVERLAY_NAME
-  fi
-
-  if [ "$had_dir" -eq 1 ]; then
-    export DIRENV_OVERLAY_DIR="$previous_dir"
-  else
-    unset DIRENV_OVERLAY_DIR
-  fi
-
-  return "$status"
-}
-
 _direnv_overlay_run_in_dir() {
   local overlay_dir="$1"
   shift
@@ -201,10 +160,11 @@ overlay() {
   fi
 
   watch_dir "$overlay_dir"
+  export DIRENV_OVERLAY_NAME="$name"
+  export DIRENV_OVERLAY_DIR="$overlay_dir"
 
   if [ -f "$overlay_envrc" ]; then
-    _direnv_overlay_with_context "$name" "$overlay_dir" \
-      _direnv_overlay_run_in_dir "$overlay_dir" source_env "$overlay_envrc"
+    _direnv_overlay_run_in_dir "$overlay_dir" source_env "$overlay_envrc"
     return "$?"
   fi
 
