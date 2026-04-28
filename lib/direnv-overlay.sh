@@ -49,12 +49,10 @@ _direnv_overlay_project_root() {
 _direnv_overlay_lookup_name() {
   local map_file
   local project_root
-  local repo_name
   local line=""
   local matcher=""
   local overlay_name=""
-  local path_match=""
-  local repo_match=""
+  local glob_pattern=""
 
   DIRENV_OVERLAY_MATCH=""
   map_file="$(_direnv_overlay_map_file)"
@@ -64,8 +62,6 @@ _direnv_overlay_lookup_name() {
   fi
 
   project_root="$(_direnv_overlay_project_root)" || return 2
-  repo_name=${project_root##*/}
-
   watch_file "$map_file"
 
   while IFS= read -r line || [ -n "$line" ]; do
@@ -91,16 +87,22 @@ _direnv_overlay_lookup_name() {
     fi
 
     case "$matcher" in
-      path:*)
-        if [ "${matcher#path:}" = "$project_root" ]; then
-          path_match="$overlay_name"
-          break
+      glob:*)
+        glob_pattern="${matcher#glob:}"
+
+        if [ -z "$glob_pattern" ]; then
+          _direnv_overlay_error "glob mapping must not be empty: $line"
+          return 1
+        fi
+
+        if [[ "$project_root" == $glob_pattern ]]; then
+          DIRENV_OVERLAY_MATCH="$overlay_name"
+          return 0
         fi
         ;;
-      repo:*)
-        if [ -z "$repo_match" ] && [ "${matcher#repo:}" = "$repo_name" ]; then
-          repo_match="$overlay_name"
-        fi
+      path:*|repo:*)
+        _direnv_overlay_error "unsupported mapping key: $matcher (use glob:<pattern>)"
+        return 1
         ;;
       *)
         _direnv_overlay_error "invalid mapping key: $matcher"
@@ -108,16 +110,6 @@ _direnv_overlay_lookup_name() {
         ;;
     esac
   done < "$map_file"
-
-  if [ -n "$path_match" ]; then
-    DIRENV_OVERLAY_MATCH="$path_match"
-    return 0
-  fi
-
-  if [ -n "$repo_match" ]; then
-    DIRENV_OVERLAY_MATCH="$repo_match"
-    return 0
-  fi
 
   return 2
 }
