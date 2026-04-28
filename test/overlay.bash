@@ -146,9 +146,9 @@ test_use_direnv_overlay_noops_without_map() {
   assert_eq "" "$LAST_ERROR"
 }
 
-test_use_direnv_overlay_loads_repo_match() {
-  local project_dir="$tmpdir/project-repo-match"
-  local home_dir="$tmpdir/home-repo-match"
+test_use_direnv_overlay_loads_glob_match() {
+  local project_dir="$tmpdir/project-glob-match"
+  local home_dir="$tmpdir/home-glob-match"
   local overlay_dir="$home_dir/.direnv-overlay/foo"
   local map_file="$home_dir/.direnv-overlay/overlays.map"
 
@@ -164,7 +164,7 @@ test_use_direnv_overlay_loads_repo_match() {
 export OVERLAY_RESULT="\$PWD|\$DIRENV_OVERLAY_NAME|\$DIRENV_OVERLAY_DIR"
 EOF
   cat >"$map_file" <<EOF
-repo:project-repo-match => foo
+glob:$project_dir => foo
 EOF
 
   builtin cd "$project_dir"
@@ -177,34 +177,58 @@ EOF
   assert_eq "$overlay_dir" "$DIRENV_OVERLAY_DIR"
 }
 
-test_use_direnv_overlay_prefers_path_match() {
-  local project_dir="$tmpdir/project-path-match"
-  local home_dir="$tmpdir/home-path-match"
-  local default_overlay_dir="$home_dir/.direnv-overlay/default"
-  local specific_overlay_dir="$home_dir/.direnv-overlay/specific"
+test_use_direnv_overlay_uses_first_glob_match() {
+  local project_dir="$tmpdir/project-glob-order"
+  local home_dir="$tmpdir/home-glob-order"
+  local first_overlay_dir="$home_dir/.direnv-overlay/first"
+  local second_overlay_dir="$home_dir/.direnv-overlay/second"
   local map_file="$home_dir/.direnv-overlay/overlays.map"
 
-  mkdir -p "$project_dir" "$default_overlay_dir" "$specific_overlay_dir" "$(dirname "$map_file")"
+  mkdir -p "$project_dir" "$first_overlay_dir" "$second_overlay_dir" "$(dirname "$map_file")"
   HOME="$home_dir"
   LAST_ERROR=""
   unset OVERLAY_RESULT
 
   : >"$project_dir/.envrc"
-  cat >"$default_overlay_dir/.envrc" <<EOF
-export OVERLAY_RESULT="default"
+  cat >"$first_overlay_dir/.envrc" <<EOF
+export OVERLAY_RESULT="first"
 EOF
-  cat >"$specific_overlay_dir/.envrc" <<EOF
-export OVERLAY_RESULT="specific"
+  cat >"$second_overlay_dir/.envrc" <<EOF
+export OVERLAY_RESULT="second"
 EOF
   cat >"$map_file" <<EOF
-repo:project-path-match => default
-path:$project_dir => specific
+glob:$tmpdir/* => first
+glob:$project_dir => second
 EOF
 
   builtin cd "$project_dir"
   use_direnv_overlay
 
-  assert_eq "specific" "$OVERLAY_RESULT"
+  assert_eq "first" "$OVERLAY_RESULT"
+}
+
+test_use_direnv_overlay_errors_on_legacy_mapping_keys() {
+  local project_dir="$tmpdir/project-legacy-map"
+  local home_dir="$tmpdir/home-legacy-map"
+  local map_file="$home_dir/.direnv-overlay/overlays.map"
+
+  mkdir -p "$project_dir" "$(dirname "$map_file")"
+  HOME="$home_dir"
+  LAST_ERROR=""
+
+  : >"$project_dir/.envrc"
+  cat >"$map_file" <<EOF
+repo:project-legacy-map => legacy
+EOF
+
+  builtin cd "$project_dir"
+
+  if use_direnv_overlay >/dev/null 2>&1; then
+    echo "expected legacy mapping keys to fail" >&2
+    exit 1
+  fi
+
+  assert_contains "unsupported mapping key" "$LAST_ERROR"
 }
 
 test_use_direnv_overlay_errors_on_invalid_mapping() {
@@ -238,8 +262,9 @@ test_sources_overlay_envrc_in_overlay_directory
 test_errors_when_overlay_has_no_entrypoint
 test_use_direnv_overlay_requires_no_args
 test_use_direnv_overlay_noops_without_map
-test_use_direnv_overlay_loads_repo_match
-test_use_direnv_overlay_prefers_path_match
+test_use_direnv_overlay_loads_glob_match
+test_use_direnv_overlay_uses_first_glob_match
+test_use_direnv_overlay_errors_on_legacy_mapping_keys
 test_use_direnv_overlay_errors_on_invalid_mapping
 
 echo "ok"

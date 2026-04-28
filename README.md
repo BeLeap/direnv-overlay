@@ -25,7 +25,7 @@ Create the overlay root and a mapping file:
 ```sh
 mkdir -p ~/.direnv-overlay/work-api
 cat > ~/.direnv-overlay/overlays.map <<'EOF'
-repo:api => work-api
+glob:*/api => work-api
 EOF
 ```
 
@@ -38,7 +38,7 @@ PATH_add bin
 EOF
 ```
 
-Now entering a project whose detected repo name is `api` will load that overlay.
+Now entering a project whose detected root path matches `*/api` will load that overlay.
 
 ## Install
 
@@ -127,7 +127,7 @@ Each overlay must contain:
 Example:
 
 ```text
-repo:api => work-api
+glob:*/api => work-api
 ```
 
 ```sh
@@ -140,22 +140,20 @@ PATH_add bin
 Supported entries:
 
 ```text
-path:/absolute/project/path => overlay-name
-repo:repository-directory-name => overlay-name
+glob:<shell-glob-pattern-for-project-root> => overlay-name
 ```
 
 Example:
 
 ```text
-path:/Users/alice/src/work/api => work-api
-repo:direnv-overlay => personal-dev
+glob:/Users/alice/src/work/api => work-api
+glob:*/direnv-overlay => personal-dev
 ```
 
 Behavior:
 
-- `path:` matches the detected project root exactly.
-- `repo:` matches the final path segment of the detected project root.
-- `path:` takes priority over `repo:`.
+- `glob:` matches the detected project root path using Bash glob matching.
+- mappings are evaluated top-to-bottom; first match wins.
 - blank lines and `#` comments are ignored.
 - invalid mapping lines fail explicitly.
 - if no mapping matches, `use_direnv_overlay` does nothing.
@@ -165,7 +163,7 @@ Behavior:
 1. Install the helper into your global `direnv` lib directory.
 2. Call `use_direnv_overlay` from your global `direnvrc`.
 3. Keep a personal mapping file at `~/.direnv-overlay/overlays.map`.
-4. Map a project path or repo name to an overlay name.
+4. Map a project-root glob pattern to an overlay name.
 5. Put that overlay's `.envrc` in `~/.direnv-overlay/<name>/.envrc`.
 
 When `direnv` evaluates a project, `direnv-overlay` finds the matching overlay and
@@ -216,7 +214,7 @@ finds the nearest one of:
 - `.git/`
 - `.jj/`
 
-That detected root is what `path:` and `repo:` matching uses.
+That detected root path is what `glob:` matching uses.
 
 ## Configuration
 
